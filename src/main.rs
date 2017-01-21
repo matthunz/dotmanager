@@ -1,4 +1,5 @@
 extern crate clap;
+extern crate toml;
 
 use clap::{App, Arg};
 use std::env;
@@ -14,6 +15,11 @@ fn get_config() -> Option<PathBuf> {
         .map(|x| PathBuf::from(x).join(".config").join("dotmanager").join("config.toml"));
 
     xdg_path.or(dot_path)
+}
+
+fn parse_config(buffer: String) {
+    let config = toml::Parser::new(&buffer).parse().unwrap();
+    println!("{:?}", config.get("global"));
 }
 
 fn main() {
@@ -34,5 +40,5 @@ fn main() {
     File::open(&config_file).expect("Could not open config file")
         .read_to_string(&mut buffer).expect("Could not read config file");
 
-    println!("{:?}", buffer);
+    parse_config(buffer);
 }
