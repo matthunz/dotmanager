@@ -2,6 +2,8 @@ extern crate clap;
 
 use clap::{App, Arg};
 use std::env;
+use std::fs::File;
+use std::io::Read;
 use std::path::PathBuf;
 
 fn get_config() -> Option<PathBuf> {
@@ -23,10 +25,14 @@ fn main() {
              .takes_value(true))
         .get_matches();
 
-    let config = match matches.value_of("config") {
+    let config_file = match matches.value_of("config") {
         Some(path) => PathBuf::from(path),
         None => get_config().expect("Config file not found")
     };
 
-    println!("{:?}", config);
+    let mut buffer = String::new();
+    File::open(&config_file).expect("Could not open config file")
+        .read_to_string(&mut buffer).expect("Could not read config file");
+
+    println!("{:?}", buffer);
 }
