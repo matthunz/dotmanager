@@ -1,7 +1,9 @@
 extern crate clap;
+extern crate tera;
 extern crate toml;
 
 use clap::{App, Arg};
+use tera::Context;
 use std::env;
 use std::fs::File;
 use std::io::Read;
@@ -18,8 +20,16 @@ fn get_config() -> Option<PathBuf> {
 }
 
 fn parse_config(buffer: String) {
-    let config = toml::Parser::new(&buffer).parse().unwrap();
-    println!("{:?}", config.get("global"));
+    let config = toml::Parser::new(&buffer).parse().expect("Config is invalid toml");
+    let mut context = Context::new();
+
+    if config.contains_key("global") {
+        for (key, val) in config.get("global").unwrap().as_table().unwrap() {
+            context.add(key, &val.as_str().expect("Invalid string found in [global]"))
+        }
+    }
+
+    println!("{:?}", context); 
 }
 
 fn main() {
