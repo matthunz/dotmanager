@@ -19,25 +19,17 @@ fn get_config() -> Option<PathBuf> {
     xdg_path.or(dot_path)
 }
 
-fn parse_config(buffer: String) {
-    let config = toml::Parser::new(&buffer).parse().expect("Config is invalid toml");
-    let mut context = Context::new();
-
-    if config.contains_key("global") {
-        for (key, val) in config.get("global").unwrap().as_table().unwrap() {
-            context.add(key, &val.as_str().expect("Invalid string found in [global]"))
-        }
-    }
-
-    println!("{:?}", context); 
-}
-
 fn main() {
     let matches = App::new("Dotmanager")
         .arg(Arg::with_name("config")
              .short("c")
              .long("config")
              .help("Sets a custom config file")
+             .takes_value(true))
+        .arg(Arg::with_name("theme")
+             .short("t")
+             .long("theme")
+             .help("Use a theme defined in the config")
              .takes_value(true))
         .get_matches();
 
@@ -50,5 +42,22 @@ fn main() {
     File::open(&config_file).expect("Could not open config file")
         .read_to_string(&mut buffer).expect("Could not read config file");
 
-    parse_config(buffer);
+    let config = toml::Parser::new(&buffer).parse().expect("Config is invalid toml");
+    let mut context = Context::new();
+
+    if let Some(section) = config.get("global").and_then(toml::Value::as_table) {
+        for (key, val) in section {
+            context.add(&key, &val.as_str().expect("Invalid string found in [global]"))
+        }
+    }
+
+    if let Some(theme) = matches.value_of("theme") {
+        if let Some(section) = config.get(theme).and_then(toml::Value::as_table) {
+            for (key, val) in section {
+                context.add(&key, &val.as_str().expect("Invalid string found in section"))
+            }
+        }
+    }
+
+    println!("{:?}", context);
 }
